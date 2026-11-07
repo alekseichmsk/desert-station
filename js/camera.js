@@ -14,13 +14,12 @@ function sphericalOffset(radius, polar, azimuth, out) {
 export function createView(canvas) {
   const cfg = WORLD.camera;
   const target = new THREE.Vector3(WORLD.target.x, WORLD.target.y, WORLD.target.z);
-  const camera = new THREE.OrthographicCamera(-1, 1, 1, -1, cfg.near, cfg.far);
+  const camera = new THREE.PerspectiveCamera(cfg.fov, 1, cfg.near, cfg.far);
   const initial = {
     radius: cfg.radius,
     polar: cfg.polar,
     azimuth: cfg.azimuth,
-    zoom: cfg.zoom,
-    viewHeight: cfg.viewHeight,
+    fov: cfg.fov,
   };
   const current = { ...initial };
   const goal = { ...initial };
@@ -32,19 +31,8 @@ export function createView(canvas) {
 
   function clampGoal() {
     goal.polar = THREE.MathUtils.clamp(goal.polar, cfg.minPolar, cfg.maxPolar);
-    goal.zoom = THREE.MathUtils.clamp(goal.zoom, cfg.minZoom, cfg.maxZoom);
-  }
-
-  function applyFrustum() {
-    const half = current.viewHeight / 2;
-    camera.top = half;
-    camera.bottom = -half;
-    camera.left = -half * aspect;
-    camera.right = half * aspect;
-    camera.zoom = current.zoom;
-    camera.near = cfg.near;
-    camera.far = cfg.far;
-    camera.updateProjectionMatrix();
+    goal.radius = THREE.MathUtils.clamp(goal.radius, cfg.minRadius, cfg.maxRadius);
+    goal.fov = THREE.MathUtils.clamp(goal.fov, 28, 70);
   }
 
   function apply() {
@@ -52,12 +40,17 @@ export function createView(canvas) {
     camera.position.copy(target).add(offset);
     camera.up.set(0, 1, 0);
     camera.lookAt(target);
-    applyFrustum();
+    camera.fov = current.fov;
+    camera.aspect = aspect;
+    camera.near = cfg.near;
+    camera.far = cfg.far;
+    camera.updateProjectionMatrix();
   }
 
   function resize(width, height) {
     aspect = Math.max(width, 1) / Math.max(height, 1);
-    applyFrustum();
+    camera.aspect = aspect;
+    camera.updateProjectionMatrix();
   }
 
   function update(dt) {
@@ -65,7 +58,7 @@ export function createView(canvas) {
     current.radius += (goal.radius - current.radius) * k;
     current.polar += (goal.polar - current.polar) * k;
     current.azimuth += (goal.azimuth - current.azimuth) * k;
-    current.zoom += (goal.zoom - current.zoom) * k;
+    current.fov += (goal.fov - current.fov) * k;
     apply();
   }
 
@@ -73,7 +66,7 @@ export function createView(canvas) {
     goal.radius = initial.radius;
     goal.polar = initial.polar;
     goal.azimuth = initial.azimuth;
-    goal.zoom = initial.zoom;
+    goal.fov = initial.fov;
   }
 
   function snap(partial) {
@@ -83,11 +76,11 @@ export function createView(canvas) {
     if (partial.radius != null) current.radius = goal.radius = partial.radius;
     if (partial.polar != null) current.polar = goal.polar = partial.polar;
     if (partial.azimuth != null) current.azimuth = goal.azimuth = partial.azimuth;
-    if (partial.zoom != null) current.zoom = goal.zoom = partial.zoom;
-    if (partial.viewHeight != null) current.viewHeight = partial.viewHeight;
+    if (partial.fov != null) current.fov = goal.fov = partial.fov;
     clampGoal();
     current.polar = goal.polar;
-    current.zoom = goal.zoom;
+    current.radius = goal.radius;
+    current.fov = goal.fov;
     apply();
   }
 
@@ -95,8 +88,7 @@ export function createView(canvas) {
     initial.radius = current.radius;
     initial.polar = current.polar;
     initial.azimuth = current.azimuth;
-    initial.zoom = current.zoom;
-    initial.viewHeight = current.viewHeight;
+    initial.fov = current.fov;
   }
 
   function onWheel(event) {
@@ -104,7 +96,7 @@ export function createView(canvas) {
     let dy = event.deltaY;
     if (event.deltaMode === 1) dy *= 16;
     else if (event.deltaMode === 2) dy *= 120;
-    goal.zoom *= Math.exp(-dy * 0.00115);
+    goal.radius *= Math.exp(dy * 0.0011);
     clampGoal();
   }
 
@@ -136,7 +128,7 @@ export function createView(canvas) {
     if (pointers.size >= 2 && pinch) {
       const dist = pointerDistance();
       if (pinch > 0) {
-        goal.zoom *= dist / pinch;
+        goal.radius *= pinch / dist;
         clampGoal();
       }
       pinch = dist;
@@ -163,8 +155,8 @@ export function createView(canvas) {
     else if (event.key === "ArrowRight") goal.azimuth -= 0.07;
     else if (event.key === "ArrowUp") goal.polar = Math.min(cfg.maxPolar, goal.polar + 0.045);
     else if (event.key === "ArrowDown") goal.polar = Math.max(cfg.minPolar, goal.polar - 0.045);
-    else if (event.key === "+" || event.key === "=") goal.zoom *= 1.08;
-    else if (event.key === "-" || event.key === "_") goal.zoom /= 1.08;
+    else if (event.key === "+" || event.key === "=") goal.radius /= 1.08;
+    else if (event.key === "-" || event.key === "_") goal.radius *= 1.08;
     else if (event.key === "r" || event.key === "R" || event.key === "к" || event.key === "К") reset();
     else return;
     clampGoal();
@@ -185,8 +177,7 @@ export function createView(canvas) {
       return {
         azimuth: current.azimuth,
         polar: current.polar,
-        zoom: current.zoom,
-        viewHeight: current.viewHeight,
+        fov: current.fov,
         radius: current.radius,
         target: { x: target.x, y: target.y, z: target.z },
       };

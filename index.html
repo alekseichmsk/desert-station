@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="color-scheme" content="light" />
+  <meta name="app-version" content="1.2.0" />
+  <meta name="description" content="Минималистичная пустынная заправка: обзор камерой и редкие машины на дороге." />
+  <title>Пустынная заправка</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Crect fill='%23e8edf0' width='16' height='5'/%3E%3Crect fill='%23f1e9d4' y='5' width='16' height='11'/%3E%3Crect fill='%23aaa39c' y='11' width='16' height='3'/%3E%3C/svg%3E" />
+  <link rel="stylesheet" href="./css/style.css" />
+  <script type="importmap">
+  {
+    "imports": {
+      "three": "./vendor/three/three.module.js"
+    }
+  }
+  </script>
+</head>
+<body>
+  <canvas id="view" aria-label="Пустынная заправка, трёхмерная сцена"></canvas>
+  <div id="grain" aria-hidden="true"></div>
+  <p id="hint">Тяните, чтобы осмотреться. Щипок или колёсико — масштаб.</p>
+  <button id="reset" type="button" aria-label="Вернуть начальный ракурс" title="Вернуть начальный ракурс">
+    <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true">
+      <path fill="currentColor" d="M12 5V2L7 6.2 12 10.4V7.2A5 5 0 1 1 7.1 12H5a7 7 0 1 0 7-7z"/>
+    </svg>
+  </button>
+  <p id="fail" hidden>Не удалось запустить WebGL в этом браузере.</p>
+  <noscript><p class="fail">Для сцены нужен JavaScript.</p></noscript>
+  <script type="module" src="./js/main.js"></script>
+</body>
+</html>

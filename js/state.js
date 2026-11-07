@@ -1,10 +1,10 @@
 // Tunable layout, palette, and runtime flags for the desert station.
 // Distances are meters. Y is up. The road runs along X; +Z is the near shoulder.
 
-export const VERSION = "1.3.0";
+export const VERSION = "1.4.0";
 
 export const PALETTE = {
-  sky: 0x1a3d66,
+  sky: 0x243044,
   sand: 0xcbb892,
   sandFar: 0xe6dece,
   parcel: 0xe0d4c2,
@@ -53,8 +53,8 @@ export const WORLD = {
   roadWidth: 2.85,
   target: { x: -2.2, y: 1.15, z: -10.2 },
   camera: {
-    radius: 15.5,
-    polar: 1.46,
+    radius: 18,
+    polar: 1.36,
     azimuth: 0.95,
     fov: 42,
     near: 0.15,
@@ -67,7 +67,7 @@ export const WORLD = {
   light: {
     dir: { x: 0.98, y: -0.64, z: -0.19 },
     intensity: 2.4,
-    ambient: 0.55,
+    ambient: 0.72,
     mapSize: 2048,
     extent: 28,
     bias: -0.0004,
@@ -77,9 +77,9 @@ export const WORLD = {
   },
   fog: { near: 70, far: 190 },
   apron: { x: 1.5, z: -6.1, w: 14.5, d: 8.2, r: 3.5 },
-  canopy: { x: -2.304, z: -7.699, yaw: 1.792, w: 4.604, d: 3.868, top: 1.931, fascia: 0.36 },
-  shop: { x: -2.07, z: -11.4, yaw: -2.19, w: 4.7, d: 3.1, h: 2.45, roof: 2.85 },
-  sign: { x: -4.15, z: -8.6, yaw: 0.95, h: 4.6, w: 2.15, t: 1.2 },
+  canopy: { x: -2.304, z: -7.699, yaw: 1.792, w: 5.2, d: 4.05, top: 2.42, fascia: 0.46 },
+  shop: { x: -2.07, z: -11.4, yaw: -2.19, w: 4.8, d: 3.15, h: 2.55, roof: 2.71 },
+  sign: { x: -4.15, z: -8.6, yaw: 0.95, h: 3.55, w: 2.05, t: 1.05 },
   pumps: [
     { x: -5.5, z: -8.0 },
     { x: -2.6, z: -10.2 },

@@ -9,8 +9,8 @@ export function createRenderer(canvas) {
   });
   renderer.outputColorSpace = THREE.SRGBColorSpace;
   renderer.toneMapping = THREE.ReinhardToneMapping;
-  renderer.toneMappingExposure = 1.12;
-  renderer.setClearColor(0x243044, 1);
+  renderer.toneMappingExposure = 1.08;
+  renderer.setClearColor(0x070d16, 1);
   renderer.shadowMap.enabled = true;
   renderer.shadowMap.type = THREE.PCFSoftShadowMap;
   renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));

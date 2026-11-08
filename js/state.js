@@ -1,15 +1,15 @@
 // Tunable layout, palette, and runtime flags for the desert station.
 // Distances are meters. Y is up. The road runs along X; +Z is the near shoulder.
 
-export const VERSION = "1.5.0";
+export const VERSION = "1.6.1";
 
 export const PALETTE = {
-  sky: 0x243044,
-  sand: 0xcbb892,
-  sandFar: 0xe6dece,
-  parcel: 0xe0d4c2,
-  parcelSoft: 0xe7decc,
-  road: 0x3e3b38,
+  sky: 0x070d16,
+  sand: 0x52463e,
+  sandFar: 0x3d342e,
+  parcel: 0x5c5248,
+  parcelSoft: 0x4e463e,
+  road: 0x1c1a19,
   apron: 0xd8d2c6,
   roof: 0xc3c0b8,
   roofShop: 0xbebbb4,
@@ -21,8 +21,8 @@ export const PALETTE = {
   signFrame: 0x5a5a58,
   signFace: 0xb4aea6,
   signPole: 0xb7bec2,
-  pole: 0x4a4641,
-  wire: 0x7a756e,
+  pole: 0x161412,
+  wire: 0x121110,
   shadowPad: 0x6a635c,
   utility: 0xd5d8d4,
   pumpBody: 0xe3e1d8,
@@ -36,11 +36,11 @@ export const PALETTE = {
   glass: 0xd7e3e6,
   tire: 0x4e4c49,
   hub: 0xf3f0ea,
-  hillBottom: 0x9a948a,
-  hillTop: 0xc5bfb4,
-  fog: 0x6a5348,
-  ambient: 0x8eacc8,
-  sun: 0xffc49a,
+  hillBottom: 0x221c1a,
+  hillTop: 0x302824,
+  fog: 0x102833,
+  ambient: 0x1a2740,
+  sun: 0xc5d2e6,
 };
 
 export const WORLD = {
@@ -51,11 +51,11 @@ export const WORLD = {
   groundRadius: 404,
   roadLength: 220,
   roadWidth: 2.85,
-  target: { x: -0.4, y: 1.35, z: -10.8 },
+  target: { x: -0.2, y: 1.9, z: -10.8 },
   camera: {
-    radius: 16.5,
-    polar: 1.34,
-    azimuth: 0.42,
+    radius: 17.5,
+    polar: 1.4,
+    azimuth: 0.22,
     fov: 42,
     near: 0.12,
     far: 900,
@@ -65,8 +65,8 @@ export const WORLD = {
     maxRadius: 70,
   },
   light: {
-    dir: { x: -0.35, y: -0.55, z: -0.82 },
-    intensity: 1.85,
+    dir: { x: 0.12, y: -0.88, z: -0.46 },
+    intensity: 1.15,
     ambient: 0.46,
     mapSize: 2048,
     extent: 16,
@@ -75,7 +75,7 @@ export const WORLD = {
     radius: 0.6,
     blurSamples: 3,
   },
-  fog: { near: 70, far: 190 },
+  fog: { density: 0.0048 },
   apron: { x: -0.4, z: -11.3, w: 18, d: 15, r: 3.2 },
   // Footprint, meters, yaw 0. The shop facade faces +Z, toward the road.
   // Shop outer box: x [-3.6, 3.6], z [-16.6, -12.2], walls to y 2.8, roof to y 2.94.
@@ -92,8 +92,8 @@ export const WORLD = {
     ],
   },
   pole: {
-    z: 1.82,
-    height: 5.15,
+    z: -18.2,
+    height: 5.4,
     xs: [-13.5, -1.2, 11.5, 24.5, 36.5, 49],
   },
   lanes: {

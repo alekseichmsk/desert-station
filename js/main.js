@@ -53,6 +53,10 @@ if (!renderer.getContext()) {
     view.snap(snap);
     view.rememberAsInitial();
   }
+  const skyRaw = params.get("sky");
+  if (skyRaw != null && skyRaw !== "" && !Number.isNaN(Number(skyRaw))) {
+    scene.userData.night.seek(Number(skyRaw), view.camera);
+  }
   const projector = new THREE.Vector3();
 
   resetButton.addEventListener("click", () => {
@@ -103,6 +107,14 @@ if (!renderer.getContext()) {
     audit() {
       return auditStation(scene);
     },
+    seekSky(time) {
+      scene.userData.night.seek(time, view.camera);
+      renderer.render(scene, view.camera);
+      return scene.userData.night.sample();
+    },
+    sky() {
+      return scene.userData.night.sample();
+    },
     advance(seconds) {
       const was = runtime.still;
       runtime.still = false;
@@ -121,7 +133,8 @@ if (!renderer.getContext()) {
     camera: view.camera,
     view,
     traffic,
-    onFrame() {
+    onFrame(dt) {
+      scene.userData.night.update(dt, view.camera);
       frames += 1;
       if (!app.ready) app.ready = true;
       app.frames = frames;

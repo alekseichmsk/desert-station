@@ -208,7 +208,7 @@ function labelTexture(text, bg, fg, fontPx) {
   ctx.textAlign = "center";
   ctx.textBaseline = "middle";
   ctx.font = `700 ${fontPx}px sans-serif`;
-  ctx.fillText(text, 256, 128);
+  ctx.fillText(text, 256, 132);
   const texture = new THREE.CanvasTexture(canvas);
   texture.colorSpace = THREE.SRGBColorSpace;
   return texture;
@@ -218,8 +218,9 @@ function metal(color, roughness, metalness) {
   return new THREE.MeshStandardMaterial({ color, roughness, metalness });
 }
 
-function addMesh(parent, geo, mat, x, y, z) {
-  const mesh = new THREE.Mesh(geo, mat);
+function put(parent, name, geometry, material, x, y, z) {
+  const mesh = new THREE.Mesh(geometry, material);
+  mesh.name = name;
   mesh.position.set(x, y, z);
   mesh.castShadow = true;
   mesh.receiveShadow = true;
@@ -227,351 +228,502 @@ function addMesh(parent, geo, mat, x, y, z) {
   return mesh;
 }
 
-function makeDetailedPump(priceTexture, grade) {
+function makePump(spec, id) {
   const pump = new THREE.Group();
-  const cream = metal(0xe4d5c2, 0.72, 0.04);
-  const red = metal(0x8d342c, 0.68, 0.06);
-  const steel = metal(0xb5b1aa, 0.42, 0.45);
-  const rubber = metal(0x1c1c1c, 0.86, 0.02);
-  const concrete = metal(0x8d8984, 0.95, 0.0);
+  pump.name = `pump-${id}`;
+  const cream = metal(0xe7dccb, 0.78, 0.04);
+  const red = metal(0x8e342c, 0.72, 0.05);
+  const steel = metal(0xb7b3ac, 0.4, 0.48);
+  const rubber = metal(0x1a1a1a, 0.9, 0.02);
+  const concrete = metal(0x8a8681, 0.96, 0);
 
-  addMesh(pump, new THREE.BoxGeometry(1.15, 0.08, 0.62), concrete, 0, 0.04, 0);
-  addMesh(pump, new THREE.BoxGeometry(1.02, 0.05, 0.5), metal(0x6e6a66, 0.9, 0.02), 0, 0.1, 0);
+  const islandH = 0.12;
+  const bodyW = 0.46;
+  const bodyD = 0.3;
+  const bodyH = 1.22;
+  const bodyBottom = islandH;
+  const bodyTop = bodyBottom + bodyH;
+  const capH = 0.07;
 
-  const bodyH = 1.05;
-  const bodyY = 0.72;
-  addMesh(pump, new THREE.BoxGeometry(0.34, bodyH, 0.18), cream, 0, bodyY, 0);
-  addMesh(pump, new THREE.CylinderGeometry(0.055, 0.055, bodyH, 8), cream, -0.15, bodyY, 0);
-  addMesh(pump, new THREE.CylinderGeometry(0.055, 0.055, bodyH, 8), cream, 0.15, bodyY, 0);
-  addMesh(pump, new THREE.BoxGeometry(0.42, 0.12, 0.24), red, 0, 1.05, 0);
-  addMesh(pump, new THREE.BoxGeometry(0.4, 0.06, 0.22), steel, 0, 1.32, 0);
-  addMesh(pump, new THREE.BoxGeometry(0.3, 0.16, 0.02), metal(0x1a1614, 0.5, 0.2), 0, 1.18, 0.12);
+  put(pump, `pump-${id}-island`, new THREE.BoxGeometry(1.42, islandH, 0.82), concrete, 0, islandH / 2, 0);
+  put(
+    pump,
+    `pump-${id}-body`,
+    new THREE.BoxGeometry(bodyW, bodyH, bodyD),
+    cream,
+    0,
+    bodyBottom + bodyH / 2,
+    0,
+  );
+  put(pump, `pump-${id}-band`, new THREE.BoxGeometry(bodyW + 0.02, 0.13, bodyD + 0.02), red, 0, 1.02, 0);
+  put(
+    pump,
+    `pump-${id}-cap`,
+    new THREE.BoxGeometry(bodyW + 0.04, capH, bodyD + 0.04),
+    steel,
+    0,
+    bodyTop + capH / 2,
+    0,
+  );
+
+  const faceZ = bodyD / 2;
+  put(pump, `pump-${id}-bezel`, new THREE.BoxGeometry(0.3, 0.16, 0.02), metal(0x161311, 0.55, 0.25), 0, 1.16, faceZ - 0.004);
   const screen = new THREE.Mesh(
     new THREE.PlaneGeometry(0.24, 0.11),
     new THREE.MeshStandardMaterial({
-      map: priceTexture,
+      map: spec.texture,
       emissive: 0xffc56a,
-      emissiveMap: priceTexture,
-      emissiveIntensity: 0.7,
-      roughness: 0.55,
+      emissiveMap: spec.texture,
+      emissiveIntensity: 0.65,
+      roughness: 0.45,
     }),
   );
-  screen.position.set(0, 1.18, 0.135);
+  screen.name = `pump-${id}-screen`;
+  screen.position.set(0, 1.16, faceZ + 0.012);
   pump.add(screen);
 
-  const grades = ["87", "89", "93"];
-  grades.forEach((label, i) => {
-    const tex = labelTexture(label, "#2a2420", i === grade ? "#f0d7a2" : "#b7aea4", 120);
+  ["87", "89", "93"].forEach((label, index) => {
+    const tex = labelTexture(label, "#241c16", index === spec.grade ? "#f0d7a4" : "#b7aea2", 118);
     const plaque = new THREE.Mesh(
-      new THREE.PlaneGeometry(0.09, 0.07),
-      new THREE.MeshStandardMaterial({ map: tex, roughness: 0.6, metalness: 0.05 }),
+      new THREE.PlaneGeometry(0.09, 0.065),
+      new THREE.MeshStandardMaterial({ map: tex, roughness: 0.62, metalness: 0.04 }),
     );
-    plaque.position.set(-0.12 + i * 0.12, 0.92, 0.115);
+    plaque.position.set(-0.12 + index * 0.12, 0.96, faceZ + 0.008);
     pump.add(plaque);
   });
 
   for (let i = 0; i < 6; i += 1) {
-    const button = new THREE.Mesh(
-      new THREE.CylinderGeometry(0.018, 0.018, 0.012, 8),
-      i % 2 ? red : steel,
-    );
+    const button = new THREE.Mesh(new THREE.CylinderGeometry(0.016, 0.016, 0.012, 8), i % 2 ? red : steel);
     button.rotation.x = Math.PI / 2;
-    button.position.set(-0.1 + (i % 3) * 0.1, 0.78 - Math.floor(i / 3) * 0.06, 0.12);
+    button.position.set(-0.09 + (i % 3) * 0.09, 0.82 - Math.floor(i / 3) * 0.055, faceZ + 0.004);
     pump.add(button);
   }
 
-  addMesh(pump, new THREE.BoxGeometry(0.1, 0.22, 0.08), steel, 0.28, 1.02, 0.02);
-  addMesh(pump, new THREE.BoxGeometry(0.06, 0.16, 0.05), rubber, 0.3, 1.0, 0.06);
-  addMesh(pump, new THREE.BoxGeometry(0.035, 0.05, 0.09), rubber, 0.3, 1.1, 0.1);
+  const outlet = new THREE.Object3D();
+  outlet.name = `pump-${id}-outlet`;
+  outlet.position.set(bodyW / 2, 1.16, 0.02);
+  pump.add(outlet);
+  put(pump, `pump-${id}-nipple`, new THREE.CylinderGeometry(0.02, 0.02, 0.04, 8), steel, bodyW / 2 + 0.01, 1.16, 0.02).rotation.z = Math.PI / 2;
+
+  const grip = new THREE.Vector3(bodyW / 2 + 0.07, 0.98, 0.04);
+  put(pump, `pump-${id}-nozzle`, new THREE.BoxGeometry(0.045, 0.2, 0.05), rubber, grip.x, 1.05, grip.z);
+  put(pump, `pump-${id}-spout`, new THREE.BoxGeometry(0.03, 0.045, 0.08), rubber, grip.x, 1.16, grip.z + 0.04);
+  put(pump, `pump-${id}-holster`, new THREE.BoxGeometry(0.05, 0.26, 0.08), steel, bodyW / 2 + 0.01, 1.02, 0.0);
 
   const hose = new THREE.Mesh(
     new THREE.TubeGeometry(
       new THREE.CatmullRomCurve3([
-        new THREE.Vector3(0.22, 1.15, 0.02),
-        new THREE.Vector3(0.48, 0.85, 0.12),
-        new THREE.Vector3(0.55, 0.42, 0.18),
-        new THREE.Vector3(0.36, 0.28, 0.08),
-        new THREE.Vector3(0.3, 0.9, 0.08),
+        outlet.position.clone(),
+        new THREE.Vector3(0.48, 1.05, 0.16),
+        new THREE.Vector3(0.55, 0.48, 0.22),
+        new THREE.Vector3(0.4, 0.62, 0.1),
+        grip.clone(),
       ]),
-      24,
-      0.018,
+      28,
+      0.016,
       6,
       false,
     ),
     rubber,
   );
+  hose.name = `pump-${id}-hose`;
   hose.castShadow = true;
+  hose.userData.grip = grip.clone();
   pump.add(hose);
+  pump.position.set(spec.lx, 0, spec.lz);
   return pump;
 }
 
-function addStorefront(shopGroup, shop) {
-  const frameMat = metal(0x2c2826, 0.62, 0.25);
-  const glass = new THREE.MeshBasicMaterial({
-    color: 0xe7f3f8,
+function makeShop(spec) {
+  const shop = new THREE.Group();
+  shop.name = "shop";
+  shop.position.set(spec.x, 0, spec.z);
+
+  const W = spec.w;
+  const D = spec.d;
+  const H = spec.h;
+  const T = spec.wall;
+  const wallMat = metal(0xd5cbbd, 0.94, 0.02);
+  const roofMat = metal(0x8d8882, 0.97, 0.0);
+  const trim = metal(0x2a2624, 0.62, 0.28);
+  const steel = metal(0xc5c0b8, 0.35, 0.55);
+  const glassMat = new THREE.MeshStandardMaterial({
+    color: 0xc5e0e6,
+    roughness: 0.06,
+    metalness: 0.42,
     transparent: true,
-    opacity: 0.14,
+    opacity: 0.34,
+    side: THREE.DoubleSide,
+    depthWrite: false,
+  });
+  glassMat.polygonOffset = true;
+  glassMat.polygonOffsetFactor = -1;
+  glassMat.polygonOffsetUnits = -1;
+
+  const frontOuter = D / 2;
+  const frontCenter = frontOuter - T / 2;
+  const innerL = -W / 2 + T;
+  const innerR = W / 2 - T;
+  const winX0 = -2.45;
+  const winX1 = 0.15;
+  const winY0 = 0.92;
+  const winY1 = 2.26;
+  const doorX0 = 0.52;
+  const doorX1 = 1.68;
+  const doorTop = 2.18;
+
+  put(shop, "shop-wall-back", new THREE.BoxGeometry(W - T * 2, H, T), wallMat, 0, H / 2, -frontCenter);
+  put(shop, "shop-wall-left", new THREE.BoxGeometry(T, H, D), wallMat, -W / 2 + T / 2, H / 2, 0);
+  put(shop, "shop-wall-right", new THREE.BoxGeometry(T, H, D), wallMat, W / 2 - T / 2, H / 2, 0);
+
+  const facade = (name, w, h, x, y) => put(
+    shop,
+    name,
+    new THREE.BoxGeometry(w, h, T),
+    wallMat,
+    x,
+    y,
+    frontCenter,
+  );
+  facade("shop-pier-left", winX0 - innerL, H, (innerL + winX0) / 2, H / 2);
+  facade("shop-sill", winX1 - winX0, winY0, (winX0 + winX1) / 2, winY0 / 2);
+  facade("shop-lintel", winX1 - winX0, H - winY1, (winX0 + winX1) / 2, (winY1 + H) / 2);
+  facade("shop-pier-mid", doorX0 - winX1, H, (winX1 + doorX0) / 2, H / 2);
+  facade("shop-door-head", doorX1 - doorX0, H - doorTop, (doorX0 + doorX1) / 2, (doorTop + H) / 2);
+  facade("shop-pier-right", innerR - doorX1, H, (doorX1 + innerR) / 2, H / 2);
+
+  const ledge = put(
+    shop,
+    "shop-ledge",
+    new THREE.BoxGeometry(winX1 - winX0 + 0.04, 0.04, 0.08),
+    trim,
+    (winX0 + winX1) / 2,
+    winY0 + 0.01,
+    frontOuter + 0.02,
+  );
+  ledge.castShadow = true;
+
+  const casing = (w, h, x, y) => {
+    const bar = put(shop, "", new THREE.BoxGeometry(w, h, 0.035), trim, x, y, frontOuter + 0.012);
+    bar.castShadow = true;
+  };
+  casing(winX1 - winX0 + 0.06, 0.045, (winX0 + winX1) / 2, winY1);
+  casing(winX1 - winX0 + 0.06, 0.045, (winX0 + winX1) / 2, winY0);
+  casing(0.045, winY1 - winY0, winX0, (winY0 + winY1) / 2);
+  casing(0.045, winY1 - winY0, winX1, (winY0 + winY1) / 2);
+  casing(0.04, winY1 - winY0, (winX0 + winX1) / 2, (winY0 + winY1) / 2);
+  casing(doorX1 - doorX0 + 0.06, 0.045, (doorX0 + doorX1) / 2, doorTop);
+  casing(0.045, doorTop, doorX0, doorTop / 2);
+  casing(0.045, doorTop, doorX1, doorTop / 2);
+
+  const glass = put(
+    shop,
+    "shop-glass",
+    new THREE.PlaneGeometry(winX1 - winX0 - 0.08, winY1 - winY0 - 0.08),
+    glassMat,
+    (winX0 + winX1) / 2,
+    (winY0 + winY1) / 2,
+    frontCenter - 0.01,
+  );
+  glass.castShadow = false;
+
+  put(
+    shop,
+    "shop-threshold",
+    new THREE.BoxGeometry(doorX1 - doorX0, 0.04, 0.22),
+    metal(0x6d655c, 0.9, 0.04),
+    (doorX0 + doorX1) / 2,
+    0.02,
+    frontCenter,
+  );
+
+  const door = new THREE.Group();
+  door.name = "shop-door";
+  door.position.set(doorX0, 0, frontCenter);
+  const dw = doorX1 - doorX0 - 0.06;
+  const dh = doorTop - 0.055;
+  const doorBottom = 0.048;
+  const stile = 0.07;
+  const doorMat = metal(0xcfc4b4, 0.78, 0.06);
+  put(door, "shop-door-stile", new THREE.BoxGeometry(stile, dh, 0.04), doorMat, stile / 2, doorBottom + dh / 2, 0);
+  put(door, "shop-door-stile-r", new THREE.BoxGeometry(stile, dh, 0.04), doorMat, dw - stile / 2, doorBottom + dh / 2, 0);
+  put(door, "shop-door-rail-b", new THREE.BoxGeometry(dw, 0.08, 0.04), doorMat, dw / 2, doorBottom + 0.04, 0);
+  put(door, "shop-door-rail-m", new THREE.BoxGeometry(dw, 0.07, 0.04), doorMat, dw / 2, 0.98, 0);
+  put(door, "shop-door-rail-t", new THREE.BoxGeometry(dw, 0.07, 0.04), doorMat, dw / 2, doorBottom + dh - 0.035, 0);
+  put(
+    door,
+    "shop-door-panel",
+    new THREE.BoxGeometry(dw - stile * 2, 0.8, 0.03),
+    metal(0xb7aa98, 0.84, 0.04),
+    dw / 2,
+    0.55,
+    0,
+  );
+  const doorGlass = put(
+    door,
+    "shop-door-glass",
+    new THREE.PlaneGeometry(dw - stile * 2 - 0.02, 1.02),
+    glassMat,
+    dw / 2,
+    1.55,
+    0.012,
+  );
+  doorGlass.castShadow = false;
+  const handle = put(door, "shop-door-handle", new THREE.BoxGeometry(0.02, 0.16, 0.035), steel, dw - 0.05, 1.05, 0.035);
+  handle.castShadow = true;
+  [0.35, 1.05, 1.85].forEach((y) => {
+    const hinge = put(door, "shop-hinge", new THREE.CylinderGeometry(0.012, 0.012, 0.07, 8), steel, 0, y, 0);
+    hinge.rotation.x = Math.PI / 2;
+  });
+  shop.add(door);
+
+  put(
+    shop,
+    "shop-roof",
+    new THREE.BoxGeometry(W + 0.22, spec.roof, D + 0.22),
+    roofMat,
+    0,
+    H + spec.roof / 2,
+    0,
+  );
+  const neonMat = new THREE.MeshStandardMaterial({
+    color: 0xff5a42,
+    emissive: 0xff341f,
+    emissiveIntensity: 1.35,
+    roughness: 0.4,
+  });
+  const neon = put(shop, "shop-neon", new THREE.BoxGeometry(W + 0.02, 0.03, 0.03), neonMat, 0, H - 0.08, frontOuter + 0.02);
+  neon.castShadow = false;
+
+  const floor = put(
+    shop,
+    "shop-floor",
+    new THREE.BoxGeometry(W - T * 2 - 0.04, 0.06, D - T * 2 - 0.28),
+    metal(0x6a5344, 0.9, 0),
+    0,
+    0.03,
+    -0.1,
+  );
+  floor.castShadow = false;
+
+  const wood = metal(0x6d513c, 0.8, 0.03);
+  const shelfZ = frontCenter - T - 0.22;
+  const shelfX = (winX0 + winX1) / 2;
+  const colors = [0xb94a3c, 0xd7b15a, 0x3e6b52, 0xded6c8, 0x3d6296, 0xc46b3a];
+  for (let row = 0; row < 2; row += 1) {
+    const shelfY = 1.08 + row * 0.46;
+    put(shop, "shop-shelf", new THREE.BoxGeometry(winX1 - winX0 - 0.2, 0.03, 0.24), wood, shelfX, shelfY, shelfZ);
+    for (let i = 0; i < 6; i += 1) {
+      const color = colors[(i + row) % colors.length];
+      const mat = new THREE.MeshStandardMaterial({ color, roughness: 0.55, metalness: 0.02 });
+      const bottle = i % 2 === 0;
+      const height = bottle ? 0.16 + (i % 3) * 0.035 : 0.11;
+      const geo = bottle
+        ? new THREE.CylinderGeometry(0.032, 0.038, height, 8)
+        : new THREE.BoxGeometry(0.08, height, 0.06);
+      put(shop, "shop-goods", geo, mat, winX0 + 0.28 + i * 0.38, shelfY + 0.015 + height / 2, shelfZ);
+    }
+  }
+
+  const counter = put(shop, "shop-counter", new THREE.BoxGeometry(1.15, 0.92, 0.48), wood, 1.55, 0.52, 0.35);
+  counter.castShadow = true;
+  put(shop, "shop-register", new THREE.BoxGeometry(0.28, 0.14, 0.22), metal(0x242220, 0.5, 0.2), 1.45, 1.05, 0.4);
+
+  const lamp = put(
+    shop,
+    "shop-lamp",
+    new THREE.BoxGeometry(0.85, 0.05, 0.22),
+    new THREE.MeshStandardMaterial({ color: 0xf6f1e4, emissive: 0xffe0b0, emissiveIntensity: 0.7, roughness: 0.4 }),
+    shelfX,
+    H - 0.04,
+    0.15,
+  );
+  lamp.castShadow = false;
+
+  const ac = put(shop, "shop-ac", new THREE.BoxGeometry(0.7, 0.32, 0.46), metal(0xb7b8b4, 0.55, 0.28), 1.4, H + spec.roof + 0.16, -0.4);
+  ac.castShadow = true;
+  return shop;
+}
+
+function makeCanopy(spec, pumps) {
+  const canopy = new THREE.Group();
+  canopy.name = "canopy";
+  canopy.position.set(spec.x, 0, spec.z);
+  const deckMat = metal(0x9a958f, 0.97, 0);
+  const fasciaMat = metal(0x8d4638, 0.92, 0.02);
+  const soffitY = spec.top - spec.fascia;
+  const deckBottom = spec.top - spec.deck;
+
+  put(canopy, "canopy-deck", new THREE.BoxGeometry(spec.w, spec.deck, spec.d), deckMat, 0, spec.top - spec.deck / 2, 0);
+  const skirtH = deckBottom - soffitY;
+  const skirtY = soffitY + skirtH / 2;
+  const skirtT = 0.1;
+  put(canopy, "canopy-fascia-front", new THREE.BoxGeometry(spec.w, skirtH, skirtT), fasciaMat, 0, skirtY, spec.d / 2 - skirtT / 2);
+  put(canopy, "canopy-fascia-back", new THREE.BoxGeometry(spec.w, skirtH, skirtT), fasciaMat, 0, skirtY, -spec.d / 2 + skirtT / 2);
+  put(canopy, "canopy-fascia-side", new THREE.BoxGeometry(skirtT, skirtH, spec.d - skirtT * 2), fasciaMat, spec.w / 2 - skirtT / 2, skirtY, 0);
+  put(canopy, "canopy-fascia-side", new THREE.BoxGeometry(skirtT, skirtH, spec.d - skirtT * 2), fasciaMat, -spec.w / 2 + skirtT / 2, skirtY, 0);
+  put(
+    canopy,
+    "canopy-soffit",
+    new THREE.BoxGeometry(spec.w - 0.24, 0.03, spec.d - 0.24),
+    metal(0xd4cfc4, 0.92, 0),
+    0,
+    soffitY - 0.015,
+    0,
+  );
+
+  const columnMat = metal(0xd9d3c8, 0.82, 0.05);
+  [[-3.15, -1.85], [3.15, -1.85], [-3.15, 1.85], [3.15, 1.85]].forEach(([x, z], index) => {
+    put(canopy, `canopy-column-${index}`, new THREE.BoxGeometry(0.16, soffitY, 0.16), columnMat, x, soffitY / 2, z);
+    put(canopy, `canopy-capital-${index}`, new THREE.BoxGeometry(0.3, 0.04, 0.3), metal(0xb7b1a8, 0.7, 0.15), x, soffitY - 0.02, z);
+    put(canopy, `canopy-base-${index}`, new THREE.BoxGeometry(0.28, 0.05, 0.28), metal(0x8a8682, 0.92, 0.02), x, 0.025, z);
+  });
+
+  const tubeMat = new THREE.MeshStandardMaterial({
+    color: 0xf7f4ea,
+    emissive: 0xf3efe2,
+    emissiveIntensity: 1.2,
+    roughness: 0.35,
+  });
+  const beamH = soffitY - 0.4;
+  const beamRadius = 0.38;
+  const beamMat = new THREE.ShaderMaterial({
+    transparent: true,
+    depthWrite: false,
+    side: THREE.DoubleSide,
+    fog: false,
+    uniforms: {
+      uHalf: { value: beamH / 2 },
+      uRadius: { value: beamRadius },
+    },
+    vertexShader: "varying vec3 vPos; void main(){ vPos = position; gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }",
+    fragmentShader: "varying vec3 vPos; uniform float uHalf; uniform float uRadius; void main(){ float t = clamp((uHalf - vPos.y) / (uHalf * 2.0), 0.0, 1.0); float expected = max(t * uRadius, 0.001); float radial = 1.0 - smoothstep(expected * 0.02, expected * 0.92, length(vPos.xz)); float alpha = radial * pow(1.0 - t, 0.4) * 0.42; if (alpha < 0.012) discard; gl_FragColor = vec4(1.0, 0.84, 0.58, alpha); }",
+  });
+  const poolCanvas = document.createElement("canvas");
+  poolCanvas.width = 128;
+  poolCanvas.height = 128;
+  const poolCtx = poolCanvas.getContext("2d");
+  const poolGrad = poolCtx.createRadialGradient(64, 64, 6, 64, 64, 64);
+  poolGrad.addColorStop(0, "rgba(255, 206, 140, 0.9)");
+  poolGrad.addColorStop(1, "rgba(255, 206, 140, 0)");
+  poolCtx.fillStyle = poolGrad;
+  poolCtx.fillRect(0, 0, 128, 128);
+  const poolTex = new THREE.CanvasTexture(poolCanvas);
+  const poolMat = new THREE.MeshBasicMaterial({
+    map: poolTex,
+    transparent: true,
     depthWrite: false,
     side: THREE.DoubleSide,
   });
-  const z = -shop.d / 2 + 0.02;
-  const win = { x: -1.05, y: 1.48, w: 1.55, h: 1.15 };
-  const door = { x: 0.62, y: 1.12, w: 0.92, h: 2.16 };
-  const pier = new THREE.Mesh(new THREE.BoxGeometry(0.16, shop.h, 0.1), metal(0xc8b8a4, 0.9, 0.02));
-  pier.position.set(-0.12, shop.h / 2, z + 0.02);
-  pier.castShadow = true;
-  shopGroup.add(pier);
-  const pane = new THREE.Mesh(new THREE.PlaneGeometry(win.w - 0.08, win.h - 0.08), glass);
-  pane.position.set(win.x, win.y, z - 0.01);
-  const doorPane = new THREE.Mesh(new THREE.PlaneGeometry(door.w - 0.1, door.h - 0.16), glass);
-  doorPane.position.set(door.x, door.y, z - 0.01);
-  shopGroup.add(pane, doorPane);
+  [-0.75, 0.8].forEach((z, index) => {
+    put(canopy, `canopy-housing-${index}`, new THREE.BoxGeometry(spec.w * 0.62, 0.06, 0.22), metal(0xe6e1d6, 0.7, 0.08), 0, soffitY - 0.045, z);
+    const tube = put(canopy, `canopy-tube-${index}`, new THREE.CylinderGeometry(0.02, 0.02, spec.w * 0.55, 12), tubeMat, 0, soffitY - 0.09, z);
+    tube.rotation.z = Math.PI / 2;
+    tube.castShadow = false;
+    const beam = new THREE.Mesh(new THREE.ConeGeometry(beamRadius, beamH, 24, 1, true), beamMat);
+    beam.name = `canopy-beam-${index}`;
+    beam.position.set(0, soffitY - 0.16 - beamH / 2, z);
+    beam.castShadow = false;
+    canopy.add(beam);
+    const pool = new THREE.Mesh(new THREE.CircleGeometry(0.95, 24), poolMat);
+    pool.name = `canopy-pool-${index}`;
+    pool.rotation.x = -Math.PI / 2;
+    pool.position.set(0, 0.05, z);
+    canopy.add(pool);
+  });
 
-  const rim = (w, h, d, x, y) => {
-    const bar = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), frameMat);
-    bar.position.set(x, y, z);
-    bar.castShadow = true;
-    shopGroup.add(bar);
-  };
-  rim(win.w + 0.06, 0.045, 0.05, win.x, win.y + win.h / 2);
-  rim(win.w + 0.06, 0.045, 0.05, win.x, win.y - win.h / 2);
-  rim(0.045, win.h, 0.05, win.x - win.w / 2, win.y);
-  rim(0.045, win.h, 0.05, win.x + win.w / 2, win.y);
-  rim(door.w + 0.06, 0.045, 0.05, door.x, door.y + door.h / 2);
-  rim(0.045, door.h, 0.05, door.x - door.w / 2, door.y);
-  rim(0.045, door.h, 0.05, door.x + door.w / 2, door.y);
-  const handle = new THREE.Mesh(new THREE.BoxGeometry(0.02, 0.16, 0.03), metal(0xd9d4cc, 0.35, 0.55));
-  handle.position.set(door.x + door.w * 0.32, 1.05, z - 0.03);
-  const kick = new THREE.Mesh(new THREE.BoxGeometry(door.w - 0.12, 0.32, 0.025), metal(0xe4d8c8, 0.65, 0.08));
-  kick.position.set(door.x, 0.24, z - 0.025);
-  const doorGlow = new THREE.Mesh(
-    new THREE.PlaneGeometry(door.w - 0.2, door.h - 0.5),
-    new THREE.MeshStandardMaterial({ color: 0xffd7b0, emissive: 0xffb56a, emissiveIntensity: 0.7, roughness: 0.8 }),
+  const neon = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.02, 0.02, spec.w - 0.3, 24),
+    new THREE.MeshStandardMaterial({ color: 0xff5a42, emissive: 0xff341f, emissiveIntensity: 1.25, roughness: 0.45 }),
   );
-  doorGlow.position.set(door.x, door.y + 0.1, z + 0.55);
-  shopGroup.add(handle, kick, doorGlow);
+  neon.rotation.z = Math.PI / 2;
+  neon.castShadow = false;
+  neon.position.set(0, soffitY + 0.035, spec.d / 2 + 0.028);
+  canopy.add(neon);
 
-  const wood = metal(0x6a4e3b, 0.78, 0.02);
-  const floor = new THREE.Mesh(new THREE.BoxGeometry(shop.w * 0.9, 0.04, shop.d * 0.75), metal(0x5c4638, 0.86, 0));
-  floor.position.set(0, 0.06, 0.1);
-  const counter = new THREE.Mesh(new THREE.BoxGeometry(1.3, 0.9, 0.42), wood);
-  counter.position.set(0.7, 0.48, 0.15);
-  shopGroup.add(floor, counter);
+  pumps.forEach((pumpSpec, index) => {
+    const price = labelTexture(pumpSpec.price, "#1a120c", "#f0c36a", 132);
+    canopy.add(makePump({ ...pumpSpec, texture: price, grade: pumpSpec.grade }, index === 0 ? "a" : "b"));
+  });
+  return canopy;
+}
 
-  const lamp = new THREE.Mesh(
-    new THREE.BoxGeometry(0.7, 0.05, 0.18),
-    new THREE.MeshStandardMaterial({ color: 0xf4f1e4, emissive: 0xffe2b0, emissiveIntensity: 0.8, roughness: 0.4 }),
+function makeSign(spec) {
+  const sign = new THREE.Group();
+  sign.name = "sign";
+  sign.position.set(spec.x, 0, spec.z);
+  const pole = put(
+    sign,
+    "sign-pole",
+    new THREE.CylinderGeometry(0.07, 0.09, spec.h, 10),
+    metal(0x8e9398, 0.5, 0.35),
+    0,
+    spec.h / 2,
+    -0.18,
   );
-  lamp.position.set(win.x, shop.h - 0.2, z + 0.35);
-  shopGroup.add(lamp);
-
-  const colors = [0xb94a3c, 0xd7b15a, 0x3e6b52, 0xded6c8, 0x3d6296, 0xc46b3a];
-  for (let row = 0; row < 2; row += 1) {
-    const shelf = new THREE.Mesh(new THREE.BoxGeometry(1.55, 0.03, 0.22), wood);
-    shelf.position.set(win.x, 0.7 + row * 0.42, z + 0.42);
-    shopGroup.add(shelf);
-    for (let i = 0; i < 6; i += 1) {
-      const color = colors[(i + row * 2) % colors.length];
-      const bottle = i % 2 === 0;
-      const geo = bottle
-        ? new THREE.CylinderGeometry(0.035, 0.04, 0.18 + (i % 3) * 0.04, 8)
-        : new THREE.BoxGeometry(0.09, 0.11, 0.07);
-      const item = new THREE.Mesh(geo, new THREE.MeshStandardMaterial({
-        color,
-        emissive: color,
-        emissiveIntensity: 0.08,
-        roughness: 0.55,
-      }));
-      item.position.set(win.x - 0.62 + i * 0.24, 0.86 + row * 0.42, z + 0.38);
-      shopGroup.add(item);
-    }
-  }
+  pole.castShadow = true;
+  put(sign, "sign-bracket", new THREE.BoxGeometry(0.08, 0.08, 0.2), metal(0x8e9398, 0.5, 0.35), 0, spec.h, -0.08);
+  put(
+    sign,
+    "sign-board",
+    new THREE.BoxGeometry(spec.w, spec.t, 0.06),
+    metal(0x140c0b, 0.72, 0.04),
+    0,
+    spec.h + spec.t / 2,
+    0,
+  );
+  const face = new THREE.Mesh(
+    new THREE.PlaneGeometry(spec.w - 0.16, spec.t - 0.18),
+    new THREE.MeshStandardMaterial({
+      map: labelTexture("GAS", "#120807", "#ff3a2a", 118),
+      emissive: 0xff2e24,
+      emissiveMap: labelTexture("GAS", "#120807", "#ff3a2a", 118),
+      emissiveIntensity: 1.05,
+      roughness: 0.5,
+    }),
+  );
+  face.position.set(0, spec.h + spec.t / 2, 0.035);
+  const backFace = face.clone();
+  backFace.position.z = -0.035;
+  backFace.rotation.y = Math.PI;
+  sign.add(face, backFace);
+  put(sign, "sign-hours-board", new THREE.BoxGeometry(spec.w * 0.78, 0.32, 0.05), metal(0x140c0b, 0.72, 0.04), 0, spec.h - 0.22, 0);
+  const hours = new THREE.Mesh(
+    new THREE.PlaneGeometry(spec.w * 0.7, 0.24),
+    new THREE.MeshStandardMaterial({
+      map: labelTexture("24 HOURS", "#120807", "#ffb199", 56),
+      emissive: 0xff6a55,
+      emissiveMap: labelTexture("24 HOURS", "#120807", "#ffb199", 56),
+      emissiveIntensity: 0.75,
+      roughness: 0.5,
+    }),
+  );
+  hours.position.set(0, spec.h - 0.22, 0.03);
+  sign.add(hours);
+  return sign;
 }
 
 function makeStation() {
   const group = new THREE.Group();
   group.name = "station";
-  const painted = metal(0xa39e96, 0.94, 0.02);
-  const rust = metal(0xa85a48, 0.88, 0.04);
-  const wallMat = metal(0xc8b8a4, 0.9, 0.02);
-  const neonMat = new THREE.MeshStandardMaterial({
-    color: 0xff5a42,
-    emissive: 0xff341f,
-    emissiveIntensity: 1.6,
-    roughness: 0.45,
-    metalness: 0.0,
-  });
-  const tubeMat = new THREE.MeshStandardMaterial({
-    color: 0xf6f3e6,
-    emissive: 0xf1edd8,
-    emissiveIntensity: 1.15,
-    roughness: 0.4,
+  const layout = WORLD.station;
+  group.add(makeShop(layout.shop));
+  group.add(makeCanopy(layout.canopy, layout.pumps));
+  group.add(makeSign(layout.sign));
+
+  const bollard = metal(0xd7d2c8, 0.78, 0.05);
+  [[-4.4, -6.3], [2.5, -6.15], [3.5, -11.4]].forEach(([x, z]) => {
+    put(group, "bollard", new THREE.CylinderGeometry(0.07, 0.08, 0.78, 8), bollard, x, 0.39, z);
+    put(group, "bollard-band", new THREE.CylinderGeometry(0.075, 0.075, 0.06, 8), metal(0x22211f, 0.7, 0.05), x, 0.58, z);
   });
 
-  const canopy = WORLD.canopy;
-  const canopyGroup = new THREE.Group();
-  canopyGroup.position.set(canopy.x, 0, canopy.z);
-  canopyGroup.rotation.y = canopy.yaw;
-  const deck = addMesh(canopyGroup, new THREE.BoxGeometry(canopy.w, 0.1, canopy.d), painted, 0, canopy.top - 0.05, 0);
-  deck.material = painted;
-  const skirt = (w, h, d, x, z) => addMesh(
-    canopyGroup,
-    new THREE.BoxGeometry(w, h, d),
-    rust,
-    x,
-    canopy.top - canopy.fascia / 2,
-    z,
-  );
-  skirt(canopy.w, canopy.fascia, 0.08, 0, canopy.d / 2);
-  skirt(canopy.w, canopy.fascia, 0.08, 0, -canopy.d / 2);
-  skirt(0.08, canopy.fascia, canopy.d, canopy.w / 2, 0);
-  skirt(0.08, canopy.fascia, canopy.d, -canopy.w / 2, 0);
-  addMesh(
-    canopyGroup,
-    new THREE.BoxGeometry(canopy.w - 0.24, 0.035, canopy.d - 0.24),
-    metal(0xc9c4ba, 0.92, 0.0),
-    0,
-    canopy.top - canopy.fascia + 0.03,
-    0,
-  );
-  addMesh(canopyGroup, new THREE.BoxGeometry(0.9, 0.015, 0.7), rust, canopy.w * 0.28, canopy.top + 0.008, -0.3);
-
-  const neon = new THREE.Mesh(new THREE.CylinderGeometry(0.028, 0.028, canopy.w - 0.15, 8), neonMat);
-  neon.rotation.z = Math.PI / 2;
-  neon.position.set(0, canopy.top - canopy.fascia + 0.04, canopy.d / 2 - 0.02);
-  canopyGroup.add(neon);
-
-  for (let i = 0; i < 2; i += 1) {
-    const housing = addMesh(
-      canopyGroup,
-      new THREE.BoxGeometry(canopy.w * 0.62, 0.045, 0.18),
-      metal(0xe4e0d6, 0.7, 0.08),
-      0,
-      canopy.top - canopy.fascia - 0.01,
-      -0.4 + i * 0.8,
-    );
-    housing.castShadow = false;
-    const tube = new THREE.Mesh(new THREE.CylinderGeometry(0.022, 0.022, canopy.w * 0.55, 8), tubeMat);
-    tube.rotation.z = Math.PI / 2;
-    tube.position.set(0, canopy.top - canopy.fascia - 0.08, -0.4 + i * 0.8);
-    canopyGroup.add(tube);
-  }
-
-  const columnH = canopy.top - canopy.fascia;
-  [[-canopy.w * 0.32, canopy.d * 0.22], [canopy.w * 0.22, -canopy.d * 0.18]].forEach(([x, z]) => {
-    addMesh(canopyGroup, new THREE.BoxGeometry(0.16, columnH, 0.16), metal(0xd2cdc4, 0.8, 0.05), x, columnH / 2, z);
-    addMesh(canopyGroup, new THREE.BoxGeometry(0.28, 0.04, 0.28), metal(0xb7b2aa, 0.7, 0.15), x, columnH - 0.02, z);
-    addMesh(canopyGroup, new THREE.BoxGeometry(0.26, 0.06, 0.26), metal(0x8a8682, 0.9, 0.02), x, 0.03, z);
-  });
-
-  const priceA = labelTexture("1.89", "#1a120c", "#f0c36a", 132);
-  const priceB = labelTexture("1.95", "#1a120c", "#f0c36a", 132);
-  [[-canopy.w * 0.12, canopy.d * 0.28, priceA, 1], [canopy.w * 0.2, canopy.d * 0.42, priceB, 2]].forEach(([x, z, tex, grade]) => {
-    const pump = makeDetailedPump(tex, grade);
-    pump.position.set(x, 0, z);
-    canopyGroup.add(pump);
-  });
-  group.add(canopyGroup);
-
-  const shop = WORLD.shop;
-  const shopGroup = new THREE.Group();
-  shopGroup.position.set(shop.x, 0, shop.z);
-  shopGroup.rotation.y = shop.yaw;
-  const wallH = shop.h;
-  addMesh(shopGroup, new THREE.BoxGeometry(shop.w, wallH, 0.1), wallMat, 0, wallH / 2, shop.d / 2);
-  addMesh(shopGroup, new THREE.BoxGeometry(0.1, wallH, shop.d, ), wallMat, -shop.w / 2, wallH / 2, 0);
-  addMesh(shopGroup, new THREE.BoxGeometry(0.1, wallH, shop.d), wallMat, shop.w / 2, wallH / 2, 0);
-  const roof = addMesh(
-    shopGroup,
-    new THREE.BoxGeometry(shop.w + 0.18, 0.14, shop.d + 0.18),
-    painted,
-    0,
-    wallH + 0.07,
-    0,
-  );
-  roof.material = painted;
-  const shopNeon = new THREE.Mesh(new THREE.CylinderGeometry(0.02, 0.02, shop.w + 0.05, 8), neonMat);
-  shopNeon.rotation.z = Math.PI / 2;
-  shopNeon.position.set(0, wallH - 0.02, -shop.d / 2 - 0.02);
-  shopGroup.add(shopNeon);
-  addStorefront(shopGroup, shop);
-
-  const ac = addMesh(shopGroup, new THREE.BoxGeometry(0.62, 0.32, 0.42), metal(0xb9bbb6, 0.55, 0.25), 0.4, wallH + 0.3, 0.35);
-  for (let i = 0; i < 3; i += 1) {
-    addMesh(shopGroup, new THREE.BoxGeometry(0.48, 0.015, 0.02), metal(0x2a2a28, 0.6, 0.2), 0.4, wallH + 0.2 + i * 0.07, 0.56);
-  }
-  ac.castShadow = true;
-  const util = addMesh(shopGroup, new THREE.BoxGeometry(0.45, 0.7, 0.28), metal(0x8d9290, 0.6, 0.3), shop.w / 2 + 0.2, 0.4, 0.2);
-  util.castShadow = true;
-  group.add(shopGroup);
-
-  const sign = WORLD.sign;
-  const signGroup = new THREE.Group();
-  signGroup.position.set(sign.x, 0, sign.z);
-  signGroup.rotation.y = sign.yaw;
-  const boardBottom = sign.h;
-  const pole = addMesh(
-    signGroup,
-    new THREE.CylinderGeometry(0.07, 0.09, boardBottom, 10),
-    metal(0x8e9398, 0.5, 0.35),
-    0,
-    boardBottom / 2,
-    -0.16,
-  );
-  pole.castShadow = true;
-  addMesh(signGroup, new THREE.BoxGeometry(0.08, 0.08, 0.22), metal(0x8e9398, 0.5, 0.35), 0, boardBottom, -0.08);
-  const board = addMesh(
-    signGroup,
-    new THREE.BoxGeometry(sign.w, sign.t, 0.06),
-    metal(0x140c0b, 0.7, 0.05),
-    0,
-    boardBottom + sign.t / 2,
-    0,
-  );
-  board.castShadow = true;
-  const gasTex = labelTexture("GAS", "#120807", "#ff3a2a", 118);
-  const face = new THREE.Mesh(
-    new THREE.PlaneGeometry(sign.w - 0.16, sign.t - 0.16),
-    new THREE.MeshStandardMaterial({
-      map: gasTex,
-      emissive: 0xff2e24,
-      emissiveMap: gasTex,
-      emissiveIntensity: 1.05,
-      roughness: 0.55,
-    }),
-  );
-  face.position.set(0, boardBottom + sign.t / 2, 0.035);
-  signGroup.add(face);
-  const hoursTex = labelTexture("24 HOURS", "#120807", "#ffb199", 58);
-  const hours = new THREE.Mesh(
-    new THREE.PlaneGeometry(sign.w * 0.72, 0.28),
-    new THREE.MeshStandardMaterial({
-      map: hoursTex,
-      emissive: 0xff6a55,
-      emissiveMap: hoursTex,
-      emissiveIntensity: 0.8,
-      roughness: 0.55,
-    }),
-  );
-  hours.position.set(0, boardBottom - 0.22, 0.035);
-  const hoursBoard = addMesh(signGroup, new THREE.BoxGeometry(sign.w * 0.78, 0.34, 0.05), metal(0x140c0b, 0.7, 0.05), 0, boardBottom - 0.22, 0);
-  hoursBoard.castShadow = true;
-  signGroup.add(hours);
-  group.add(signGroup);
-
-  [[-3.3, -6.15], [-0.55, -5.55], [1.45, -6.7]].forEach(([x, z]) => {
-    addMesh(group, new THREE.CylinderGeometry(0.07, 0.08, 0.78, 8), metal(0xd7d2c8, 0.75, 0.05), x, 0.39, z);
-    addMesh(group, new THREE.CylinderGeometry(0.075, 0.075, 0.06, 8), metal(0x22211f, 0.7, 0.05), x, 0.58, z);
-  });
-
-  addMesh(group, new THREE.CylinderGeometry(0.2, 0.22, 0.62, 10), metal(0x2c4638, 0.8, 0.02), 1.15, 0.31, -13.2);
-  addMesh(group, new THREE.CylinderGeometry(0.23, 0.23, 0.05, 10), metal(0x24382d, 0.7, 0.05), 1.15, 0.64, -13.2);
-  addMesh(group, new THREE.BoxGeometry(0.55, 0.7, 0.32), metal(0x6e7270, 0.7, 0.2), 3.4, 0.4, -9.6);
-  const coil = new THREE.Mesh(new THREE.TorusGeometry(0.16, 0.025, 6, 12), metal(0x1c1c1c, 0.8, 0.02));
-  coil.position.set(3.75, 0.45, -9.35);
-  coil.rotation.y = 0.6;
+  put(group, "trash", new THREE.CylinderGeometry(0.2, 0.22, 0.62, 10), metal(0x2c4638, 0.82, 0.02), 4.15, 0.31, -12.5);
+  put(group, "trash-lid", new THREE.CylinderGeometry(0.23, 0.23, 0.05, 10), metal(0x24382d, 0.7, 0.05), 4.15, 0.64, -12.5);
+  put(group, "air", new THREE.BoxGeometry(0.55, 0.72, 0.32), metal(0x6e7270, 0.72, 0.18), -5.35, 0.36, -6.5);
+  const coil = new THREE.Mesh(new THREE.TorusGeometry(0.16, 0.025, 6, 14), metal(0x1c1c1c, 0.82, 0.02));
+  coil.position.set(-5.05, 0.42, -6.35);
+  coil.rotation.y = 0.4;
   group.add(coil);
-
   return group;
 }
 
@@ -581,29 +733,108 @@ function makeLights(scene) {
   sun.castShadow = true;
   const dir = new THREE.Vector3(WORLD.light.dir.x, WORLD.light.dir.y, WORLD.light.dir.z).normalize();
   const focus = new THREE.Vector3(WORLD.target.x, 0, WORLD.target.z);
-  sun.position.copy(focus).addScaledVector(dir, -120);
+  sun.position.copy(focus).addScaledVector(dir, -90);
   sun.target.position.copy(focus);
   const extent = WORLD.light.extent;
   sun.shadow.camera.left = -extent;
   sun.shadow.camera.right = extent;
   sun.shadow.camera.top = extent;
   sun.shadow.camera.bottom = -extent;
-  sun.shadow.camera.near = 20;
-  sun.shadow.camera.far = 280;
+  sun.shadow.camera.near = 10;
+  sun.shadow.camera.far = 220;
   sun.shadow.camera.updateProjectionMatrix();
   sun.shadow.mapSize.set(WORLD.light.mapSize, WORLD.light.mapSize);
   sun.shadow.bias = WORLD.light.bias;
   sun.shadow.normalBias = WORLD.light.normalBias;
   sun.shadow.radius = WORLD.light.radius;
   sun.shadow.blurSamples = WORLD.light.blurSamples;
-  const canopyLight = new THREE.PointLight(0xfff1d2, 3.4, 14, 2);
-  canopyLight.position.set(-2.1, 1.55, -7.4);
-  const shopLight = new THREE.PointLight(0xffb15a, 7.5, 11, 2);
-  shopLight.position.set(-2.1, 1.7, -11.2);
-  const neonLight = new THREE.PointLight(0xff3a2a, 3.2, 12, 2);
-  neonLight.position.set(-2.2, 2.0, -6.6);
-  scene.add(ambient, sun, sun.target, canopyLight, shopLight, neonLight);
+
+  const shop = WORLD.station.shop;
+  const canopy = WORLD.station.canopy;
+  const shopLight = new THREE.PointLight(0xffb15a, 8, 9, 2);
+  shopLight.position.set(shop.x - 0.4, 2.15, shop.z + 0.2);
+  const neonLight = new THREE.PointLight(0xff3a2a, 1.4, 7, 2);
+  neonLight.position.set(shop.x, shop.h - 0.1, shop.z + shop.d / 2 + 0.3);
+  scene.add(ambient, sun, sun.target, shopLight, neonLight);
+
+  [-0.75, 0.8].forEach((lz) => {
+    const spot = new THREE.SpotLight(0xffe4bc, 9, 6.5, 0.5, 0.55, 1.6);
+    spot.position.set(canopy.x, canopy.top - canopy.fascia - 0.15, canopy.z + lz);
+    spot.target.position.set(canopy.x, 0.02, canopy.z + lz);
+    spot.castShadow = false;
+    scene.add(spot, spot.target);
+  });
   return { ambient, sun };
+}
+
+function worldBox(scene, name) {
+  const obj = scene.getObjectByName(name);
+  if (!obj) return null;
+  return new THREE.Box3().setFromObject(obj);
+}
+
+export function auditStation(scene) {
+  scene.updateMatrixWorld(true);
+  const issues = [];
+  const box = (name) => {
+    const found = worldBox(scene, name);
+    if (!found) issues.push(`missing ${name}`);
+    return found;
+  };
+  const touch = (upperName, lowerName, gapMax, embedMax) => {
+    const upper = box(upperName);
+    const lower = box(lowerName);
+    if (!upper || !lower) return;
+    const gap = upper.min.y - lower.max.y;
+    if (gap > gapMax || gap < -embedMax) issues.push(`${upperName} on ${lowerName} gap ${gap.toFixed(3)}`);
+  };
+  ["a", "b"].forEach((id) => {
+    touch(`pump-${id}-cap`, `pump-${id}-body`, 0.012, 0.004);
+    touch(`pump-${id}-body`, `pump-${id}-island`, 0.012, 0.004);
+    const island = box(`pump-${id}-island`);
+    if (island && (island.min.y < -0.01 || island.min.y > 0.02)) issues.push(`pump-${id} island y ${island.min.y.toFixed(3)}`);
+    const outlet = scene.getObjectByName(`pump-${id}-outlet`);
+    const body = box(`pump-${id}-body`);
+    if (outlet && body) {
+      const point = outlet.getWorldPosition(new THREE.Vector3());
+      const distance = body.distanceToPoint(point);
+      if (distance > 0.03) issues.push(`pump-${id} outlet off body ${distance.toFixed(3)}`);
+    }
+    const nozzle = box(`pump-${id}-nozzle`);
+    const hose = scene.getObjectByName(`pump-${id}-hose`);
+    if (!hose || hose.parent.name !== `pump-${id}`) issues.push(`pump-${id} hose not parented`);
+    if (nozzle && hose && hose.userData.grip) {
+      const end = hose.userData.grip.clone().applyMatrix4(hose.parent.matrixWorld);
+      if (nozzle.distanceToPoint(end) > 0.04) issues.push(`pump-${id} hose end off nozzle ${nozzle.distanceToPoint(end).toFixed(3)}`);
+    }
+  });
+  touch("shop-roof", "shop-wall-back", 0.02, 0.01);
+  touch("shop-roof", "shop-wall-left", 0.02, 0.01);
+  touch("shop-roof", "shop-wall-right", 0.02, 0.01);
+  const door = box("shop-door");
+  const threshold = box("shop-threshold");
+  if (door && threshold) {
+    const gap = door.min.y - threshold.max.y;
+    if (gap > 0.03 || gap < -0.02) issues.push(`door/threshold gap ${gap.toFixed(3)}`);
+  }
+  const floor = box("shop-floor");
+  if (floor && (floor.min.y < -0.01 || floor.min.y > 0.02)) issues.push(`floor y ${floor.min.y.toFixed(3)}`);
+  const shop = box("shop");
+  const canopy = box("canopy");
+  if (shop && canopy && shop.intersectsBox(canopy)) issues.push("shop intersects canopy");
+  if (door && canopy && door.intersectsBox(canopy)) issues.push("door intersects canopy");
+  if (shop && door && !shop.containsBox(door)) issues.push("door outside shop shell");
+  const glass = box("shop-glass");
+  if (shop && glass && !shop.containsBox(glass)) issues.push("glass outside shop");
+  const column = box("canopy-column-0");
+  const soffit = box("canopy-soffit");
+  if (column && (column.min.y < -0.01 || column.min.y > 0.02)) issues.push(`column float ${column.min.y.toFixed(3)}`);
+  if (column && soffit) {
+    const gap = soffit.min.y - column.max.y;
+    if (gap > 0.03 || gap < -0.045) issues.push(`column/soffit gap ${gap.toFixed(3)}`);
+  }
+  ["shop-wall-back", "shop-wall-left", "shop-wall-right", "shop-pier-left", "shop-sill", "shop-lintel", "shop-glass", "shop-door", "canopy-deck", "canopy-beam-0"].forEach(box);
+  return { ok: issues.length === 0, issues };
 }
 
 export function buildScene() {
@@ -662,9 +893,9 @@ export function buildScene() {
   scene.add(road);
   const crackMat = new THREE.MeshStandardMaterial({ color: 0x242220, roughness: 1 });
   const crackPaths = [
-    [[-1.4, -4.2], [-0.6, -4.55], [0.5, -4.3], [1.3, -4.7], [2.1, -4.45]],
-    [[1.6, -6.1], [2.2, -6.45], [2.7, -6.2], [3.4, -6.55]],
-    [[-2.2, -7.4], [-1.5, -7.15], [-0.7, -7.5], [0.1, -7.25]],
+    [[-3.2, -6.4], [-2.4, -6.7], [-1.5, -6.35], [-0.4, -6.8]],
+    [[0.6, -7.1], [1.4, -6.7], [2.2, -7.05], [2.9, -6.6]],
+    [[-1.8, -9.6], [-0.9, -9.9], [0.1, -9.5], [0.9, -9.85]],
   ];
   crackPaths.forEach((path) => {
     const positions = [];
@@ -690,11 +921,12 @@ export function buildScene() {
     crack.receiveShadow = true;
     scene.add(crack);
   });
-  [[-0.8, -5.8, 1.6, 0.5], [1.4, -6.9, 1.5, 0.55]].forEach(([x, z, w, d]) => {
+  [[-2.35, -8.22], [0.85, -8.65]].forEach(([x, z]) => {
     const mark = new THREE.Mesh(
-      new THREE.BoxGeometry(w, 0.004, d),
+      new THREE.PlaneGeometry(1.15, 2.15),
       new THREE.MeshStandardMaterial({ color: 0xc2b6a0, roughness: 1, metalness: 0 }),
     );
+    mark.rotation.x = -Math.PI / 2;
     mark.position.set(x, 0.046, z);
     mark.receiveShadow = true;
     scene.add(mark);

@@ -1,6 +1,6 @@
 import * as THREE from "three";
 import { VERSION, runtime } from "./state.js";
-import { buildScene } from "./scene.js";
+import { auditStation, buildScene } from "./scene.js";
 import { createTraffic } from "./traffic.js";
 import { createView } from "./camera.js";
 import { createRenderer, resizeToWindow, startLoop } from "./render.js";
@@ -99,6 +99,9 @@ if (!renderer.getContext()) {
     },
     info() {
       return view.info();
+    },
+    audit() {
+      return auditStation(scene);
     },
     advance(seconds) {
       const was = runtime.still;

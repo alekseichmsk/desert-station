@@ -12,7 +12,7 @@ export function createRenderer(canvas) {
   renderer.toneMappingExposure = 1.12;
   renderer.setClearColor(0x243044, 1);
   renderer.shadowMap.enabled = true;
-  renderer.shadowMap.type = THREE.PCFShadowMap;
+  renderer.shadowMap.type = THREE.PCFSoftShadowMap;
   renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
   return renderer;
 }

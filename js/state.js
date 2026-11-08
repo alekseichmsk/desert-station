@@ -1,7 +1,7 @@
 // Tunable layout, palette, and runtime flags for the desert station.
 // Distances are meters. Y is up. The road runs along X; +Z is the near shoulder.
 
-export const VERSION = "1.4.0";
+export const VERSION = "1.5.0";
 
 export const PALETTE = {
   sky: 0x243044,
@@ -51,39 +51,46 @@ export const WORLD = {
   groundRadius: 404,
   roadLength: 220,
   roadWidth: 2.85,
-  target: { x: -2.2, y: 1.15, z: -10.2 },
+  target: { x: -0.4, y: 1.35, z: -10.8 },
   camera: {
-    radius: 18,
-    polar: 1.36,
-    azimuth: 0.95,
+    radius: 16.5,
+    polar: 1.34,
+    azimuth: 0.42,
     fov: 42,
-    near: 0.15,
+    near: 0.12,
     far: 900,
-    minPolar: 0.55,
-    maxPolar: 1.48,
-    minRadius: 5.5,
+    minPolar: 0.45,
+    maxPolar: 1.52,
+    minRadius: 3.2,
     maxRadius: 70,
   },
   light: {
-    dir: { x: 0.98, y: -0.64, z: -0.19 },
-    intensity: 2.4,
-    ambient: 0.72,
+    dir: { x: -0.35, y: -0.55, z: -0.82 },
+    intensity: 1.85,
+    ambient: 0.46,
     mapSize: 2048,
-    extent: 28,
-    bias: -0.0004,
-    normalBias: 0.02,
+    extent: 16,
+    bias: -0.0006,
+    normalBias: 0.045,
     radius: 0.6,
     blurSamples: 3,
   },
   fog: { near: 70, far: 190 },
-  apron: { x: 1.5, z: -6.1, w: 14.5, d: 8.2, r: 3.5 },
-  canopy: { x: -2.304, z: -7.699, yaw: 1.792, w: 5.2, d: 4.05, top: 2.42, fascia: 0.46 },
-  shop: { x: -2.07, z: -11.4, yaw: -2.19, w: 4.8, d: 3.15, h: 2.55, roof: 2.71 },
-  sign: { x: -4.15, z: -8.6, yaw: 0.95, h: 3.55, w: 2.05, t: 1.05 },
-  pumps: [
-    { x: -5.5, z: -8.0 },
-    { x: -2.6, z: -10.2 },
-  ],
+  apron: { x: -0.4, z: -11.3, w: 18, d: 15, r: 3.2 },
+  // Footprint, meters, yaw 0. The shop facade faces +Z, toward the road.
+  // Shop outer box: x [-3.6, 3.6], z [-16.6, -12.2], walls to y 2.8, roof to y 2.94.
+  // Canopy outer box: x [-4.8, 3.2], z [-11.15, -5.85], deck top y 3.05.
+  // Walkway between canopy rear (z -11.15) and shop front (z -12.2) is 1.05m.
+  // Pumps are children of the canopy and stand on islands at local y 0.
+  station: {
+    shop: { x: 0, z: -14.4, w: 7.2, d: 4.4, h: 2.8, wall: 0.16, roof: 0.14 },
+    canopy: { x: -0.8, z: -8.5, w: 8, d: 5.3, top: 3.05, deck: 0.1, fascia: 0.42 },
+    sign: { x: -6.7, z: -7.3, h: 3.4, w: 2.05, t: 0.92 },
+    pumps: [
+      { lx: -1.55, lz: 0.28, price: "1.89", grade: 0 },
+      { lx: 1.65, lz: -0.15, price: "1.95", grade: 2 },
+    ],
+  },
   pole: {
     z: 1.82,
     height: 5.15,
